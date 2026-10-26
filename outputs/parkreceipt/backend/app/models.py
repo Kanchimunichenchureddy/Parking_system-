@@ -1,10 +1,11 @@
-import os
+from .config import database_url
 from datetime import datetime, timezone
 from sqlalchemy import create_engine, String, Integer, DateTime, ForeignKey, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 def now(): return datetime.now(timezone.utc).replace(tzinfo=None)
-engine = create_engine(os.getenv("DATABASE_URL", "mysql+pymysql://parkreceipt:parkreceipt@localhost:3306/parkreceipt"), pool_pre_ping=True)
+_url = database_url()
+engine = create_engine(_url, pool_pre_ping=True, **({"connect_args":{"connect_timeout":5}} if _url.drivername=="mysql+pymysql" else {}))
 Session = sessionmaker(engine, expire_on_commit=False)
 class Base(DeclarativeBase): pass
 class Location(Base):

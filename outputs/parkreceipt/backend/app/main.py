@@ -4,14 +4,28 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Literal
 from zoneinfo import ZoneInfo
 from fastapi import FastAPI, Depends, HTTPException, Request, Response
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
+from contextlib import asynccontextmanager
+from .database_check import check_database
 from pydantic import BaseModel, Field
 from pwdlib import PasswordHash
 from sqlalchemy import select, update, func
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
 from .models import *
 
-app=FastAPI(title="ParkReceipt Research MVP")
+@asynccontextmanager
+async def lifespan(app):
+    problem=check_database(engine,Base.metadata)
+    if problem: raise RuntimeError(problem)
+    yield
+
+app=FastAPI(title="ParkReceipt Research MVP",lifespan=lifespan)
+
+@app.exception_handler(OperationalError)
+@app.exception_handler(ProgrammingError)
+async def database_unavailable(request,exc):
+    # Never expose driver exceptions: they may contain SQL, tokens or credentials.
+    return JSONResponse(status_code=503,content={"detail":"Database temporarily unavailable. Payment outcome is unknown. Retry the same request after service is restored."},headers={"Retry-After":"5"})
 hasher=PasswordHash.recommended()
 IST=ZoneInfo("Asia/Kolkata")
 DEMO=os.getenv("PAYMENT_MODE","demo")=="demo"
@@ -42,6 +56,7 @@ async def security(req:Request, call_next):
 
 def current(req:Request,s=Depends(db)):
     token=req.cookies.get("session","")
+    if not token: raise HTTPException(401,"Please sign in.")
     auth=s.get(LoginSession,hashlib.sha256(token.encode()).hexdigest())
     if not auth or auth.expires_at<now(): raise HTTPException(401,"Please sign in.")
     return s.get(User,auth.user_id)

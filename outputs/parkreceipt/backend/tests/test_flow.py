@@ -1,7 +1,3 @@
-import os
-import tempfile
-os.environ['DATABASE_URL']=os.getenv('TEST_DATABASE_URL','sqlite:///'+tempfile.mktemp(prefix='parkreceipt-test-',suffix='.db'))
-os.environ['APP_ORIGIN']='http://testserver'
 import uuid
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor

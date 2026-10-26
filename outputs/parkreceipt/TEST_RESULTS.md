@@ -1,3 +1,12 @@
+# Database authentication fix — 17 October 2026
+
+- **18 tests passed on SQLite and 18 tests passed on isolated MySQL 9.5.0.** Includes missing configuration, environment precedence, credential redaction, missing-schema diagnostics, startup validation, cookie-free 401 without database lookup, controlled runtime 503, and previous payment/permission/queue tests.
+- Exact MySQL error **1045** reproduced with an intentionally incorrect password on an isolated temporary account. Valid credentials passed the same connection/schema check. Temporary account removed after verification.
+- Configuration helper tested against that isolated instance: successful connection, percent-encoding of password special characters, atomic `.env` save with mode 0600. No real local MySQL account was modified.
+- Existing host MySQL root access was rejected with 1045. Its account/password/grants therefore could not be inspected or repaired; valid database credentials must be supplied privately through the configuration helper.
+- Existing backend process was not restarted or reconfigured. Restart it after setting verified credentials to load the code changes. No application records or existing databases were deleted.
+- Docker/MySQL 8.4 remains unverified. One existing Starlette TestClient deprecation warning; no failures.
+
 # Staff trial and launcher update — 16 October 2026
 
 - **11 backend tests passed on SQLite**, including authenticated staff creation, wrong-location rejection, cash-only enforcement, idempotent staff retries, and queue visibility with 205 newer confirmed records.

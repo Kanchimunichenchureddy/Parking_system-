@@ -2,6 +2,12 @@
 
 A small React + TypeScript / FastAPI / SQLAlchemy application for testing QR parking requests, staff cash confirmation, and digital receipts at three locations. MySQL is the intended shared source of truth. Online payment is a simulation and never collects money. The entire interface and CSV exports identify this as a research prototype.
 
+## MySQL access denied (1045)
+
+See `DATABASE_FIX.md` for the error explanation and verified fix. Database credentials are separate from the website's owner/staff credentials. The backend no longer falls back to the example `parkreceipt` password. It reads process environment settings first, then `backend/.env`, then the project `.env` (literal KEY=value settings; no variable expansion).
+
+To configure an existing local MySQL account, activate the backend environment and run `python -m app.configure_db`. This prompts privately for database credentials, verifies them, and saves `backend/.env` with owner-only permissions. It does not reset accounts or create databases. Run `python -m app.check_db` before starting Uvicorn. If DATABASE_URL was previously exported, it takes precedence over the file; unset it if you intend to use the saved settings.
+
 ## Quick local rehearsal (macOS / Linux)
 
 From this project folder, run:
